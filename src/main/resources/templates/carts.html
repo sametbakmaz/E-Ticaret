@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Manage Cart</title>
+</head>
+<body>
+<h1>Manage Cart</h1>
+<h2>Cart Details</h2>
+<div>
+    <h3>Customer: <span th:text="${cart.customer.name}">Customer Name</span></h3>
+    <h3>Total Amount: <span th:text="${cart.totalAmount}">Total Amount</span></h3>
+</div>
+<h2>Products in Cart</h2>
+<table>
+    <tr>
+        <th>Product Name</th>
+        <th>Product Price</th>
+    </tr>
+    <tr th:each="product : ${cart.products}">
+        <td th:text="${product.name}">Product Name</td>
+        <td th:text="${product.price}">Product Price</td>
+    </tr>
+</table>
+<a th:href="@{/}">Back to Home</a>
+</body>
+</html>
