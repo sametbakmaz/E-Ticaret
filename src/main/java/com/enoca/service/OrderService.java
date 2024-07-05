@@ -1,13 +1,17 @@
 package com.enoca.service;
 
-import com.enoca.exception.ResourceNotFoundException;
+
 import com.enoca.model.*;
+import com.enoca.model.dto.OrderDTO;
+import com.enoca.model.dto.OrderItemDTO;
 import com.enoca.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -15,52 +19,88 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
     private CartRepository cartRepository;
 
     @Autowired
-    private OrderProductRepository orderProductRepository;
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private ProductRepository productRepository;
 
     @Autowired
-    private CustomerService customerService;
+    private PriceHistoryRepository priceHistoryRepository;
 
-    public List<Order> getAllOrdersForCustomer(Customer customer) {
-        return orderRepository.findByCustomer(customer);
+    public List<OrderDTO> getAllOrdersForCustomer(Long customerId) {
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        return orders.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    public Optional<Order> getOrderById(Long orderId) {
-        return orderRepository.findById(orderId);
+    public OrderDTO getOrderForCode(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        return convertToDTO(order);
     }
 
-    public void placeOrder(Customer customer) {
-        Cart cart = cartRepository.findByCustomer(customer)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
-
-        if (cart.getProducts().isEmpty()) {
-            throw new IllegalStateException("Cart is empty");
+    public void placeOrder(Long customerId) {
+        Cart cart = cartRepository.findByCustomerId(customerId);
+        if (cart == null || cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
         }
 
         Order order = new Order();
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
         order.setCustomer(customer);
+        order.setOrderDate(LocalDateTime.now());
         order.setTotalPrice(cart.getTotalPrice());
-        order = orderRepository.save(order);
 
-        for (Product product : cart.getProducts()) {
-            OrderProduct orderProduct = new OrderProduct();
-            orderProduct.setOrder(order);
-            orderProduct.setProduct(product);
-            orderProduct.setPriceAtPurchase(product.getPrice());
-            orderProduct.setQuantity(1);
-            orderProductRepository.save(orderProduct);
+        List<OrderItem> orderItems = cart.getItems().stream()
+                .map(cartItem -> {
+                    Product product = cartItem.getProduct();
+                    if (product.getStock() < cartItem.getQuantity()) {
+                        throw new RuntimeException("Not enough stock for product: " + product.getName());
+                    }
+                    product.setStock(product.getStock() - cartItem.getQuantity());
+                    productRepository.save(product);
 
-            product.setStock(product.getStock() - 1);
-            productRepository.save(product);
-        }
+                    OrderItem orderItem = new OrderItem();
+                    orderItem.setProduct(product);
+                    orderItem.setOrder(order);
+                    orderItem.setQuantity(cartItem.getQuantity());
+                    orderItem.setPrice(cartItem.getPrice());
+                    return orderItem;
+                }).collect(Collectors.toList());
+        order.setItems(orderItems);
 
-        cart.getProducts().clear();
-        cart.setTotalPrice(0);
+        orderRepository.save(order);
+        orderItemRepository.saveAll(orderItems);
+
+        cart.getItems().clear();
+        cart.setTotalPrice(BigDecimal.ZERO);
         cartRepository.save(cart);
+    }
+
+    private OrderDTO convertToDTO(Order order) {
+        OrderDTO orderDTO = new OrderDTO();
+        orderDTO.setId(order.getId());
+        orderDTO.setOrderDate(order.getOrderDate());
+        orderDTO.setTotalPrice(order.getTotalPrice());
+        List<OrderItemDTO> items = order.getItems().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        orderDTO.setItems(items);
+        return orderDTO;
+    }
+
+    private OrderItemDTO convertToDTO(OrderItem item) {
+        OrderItemDTO orderItemDTO = new OrderItemDTO();
+        orderItemDTO.setProductId(item.getProduct().getId());
+        orderItemDTO.setProductName(item.getProduct().getName());
+        orderItemDTO.setQuantity(item.getQuantity());
+        orderItemDTO.setPrice(item.getPrice());
+        return orderItemDTO;
     }
 }

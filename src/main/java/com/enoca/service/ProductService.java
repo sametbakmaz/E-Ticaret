@@ -1,45 +1,76 @@
 package com.enoca.service;
 
-import com.enoca.exception.ResourceNotFoundException;
+
+import com.enoca.model.PriceHistory;
 import com.enoca.model.Product;
+import com.enoca.model.dto.ProductDTO;
+import com.enoca.repository.PriceHistoryRepository;
 import com.enoca.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    @Autowired
+    private PriceHistoryRepository priceHistoryRepository;
+
+    public List<ProductDTO> getAllProducts() {
+        return productRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    public ProductDTO getProduct(Long id) {
+        return productRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
-    public Product createProduct(Product product) {
-        return productRepository.save(product);
+    public ProductDTO createProduct(ProductDTO productDTO) {
+        Product product = convertToEntity(productDTO);
+        return convertToDTO(productRepository.save(product));
     }
 
-    public Product updateProduct(Long id, Product productDetails) {
+    public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        product.setName(productDetails.getName());
-        product.setDescription(productDetails.getDescription());
-        product.setPrice(productDetails.getPrice());
-        product.setStock(productDetails.getStock());
+        // Save price history before updating the product price
+        PriceHistory priceHistory = new PriceHistory();
+        priceHistory.setProduct(product);
+        priceHistory.setPrice(product.getPrice());
+        priceHistoryRepository.save(priceHistory);
 
-        return productRepository.save(product);
+        product.setName(productDTO.getName());
+        product.setPrice(productDTO.getPrice());
+        product.setStock(productDTO.getStock());
+        return convertToDTO(productRepository.save(product));
     }
 
     public void deleteProduct(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        productRepository.delete(product);
+        productRepository.deleteById(id);
+    }
+
+    private ProductDTO convertToDTO(Product product) {
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setName(product.getName());
+        productDTO.setPrice(product.getPrice());
+        productDTO.setStock(product.getStock());
+        return productDTO;
+    }
+
+    private Product convertToEntity(ProductDTO productDTO) {
+        Product product = new Product();
+        product.setName(productDTO.getName());
+        product.setPrice(productDTO.getPrice());
+        product.setStock(productDTO.getStock());
+        return product;
     }
 }

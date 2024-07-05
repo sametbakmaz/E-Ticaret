@@ -1,7 +1,6 @@
 package com.enoca.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -14,6 +13,11 @@ public class PriceHistory extends BaseEntity {
     private Product product;
 
     private BigDecimal price;
-    private int quantity;
-    private LocalDateTime recordedAt = LocalDateTime.now();
+    private LocalDateTime date;
+
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();
+        this.date = LocalDateTime.now();
+    }
 }

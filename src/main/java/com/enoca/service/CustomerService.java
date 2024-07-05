@@ -1,58 +1,49 @@
 package com.enoca.service;
 
-import com.enoca.exception.ResourceNotFoundException;
+
 import com.enoca.model.Customer;
+import com.enoca.model.dto.CustomerDTO;
 import com.enoca.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    public List<CustomerDTO> getAllCustomers() {
+        return customerRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<Customer> getCustomerById(Long id) {
-        return customerRepository.findById(id);
+    public CustomerDTO getCustomer(Long id) {
+        return customerRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
     }
 
-    public Optional<Customer> findByEmail(String email) {
-        return customerRepository.findByEmail(email);
+    public CustomerDTO addCustomer(CustomerDTO customerDTO) {
+        Customer customer = convertToEntity(customerDTO);
+        return convertToDTO(customerRepository.save(customer));
     }
 
-    public Customer createCustomer(Customer customer) {
-        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
-        return customerRepository.save(customer);
+    private CustomerDTO convertToDTO(Customer customer) {
+        CustomerDTO customerDTO = new CustomerDTO();
+        customerDTO.setId(customer.getId());
+        customerDTO.setName(customer.getName());
+        customerDTO.setEmail(customer.getEmail());
+        return customerDTO;
     }
 
-    public Customer updateCustomer(Long id, Customer customerDetails) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-
-        customer.setName(customerDetails.getName());
-        customer.setEmail(customerDetails.getEmail());
-        customer.setPassword(passwordEncoder.encode(customerDetails.getPassword()));
-
-        return customerRepository.save(customer);
-    }
-
-    public void deleteCustomer(Long id) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-        customerRepository.delete(customer);
-    }
-
-    public Customer addCustomer(Customer customer) {
-        return createCustomer(customer);
+    private Customer convertToEntity(CustomerDTO customerDTO) {
+        Customer customer = new Customer();
+        customer.setName(customerDTO.getName());
+        customer.setEmail(customerDTO.getEmail());
+        return customer;
     }
 }

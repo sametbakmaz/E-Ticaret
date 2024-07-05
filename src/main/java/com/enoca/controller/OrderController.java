@@ -1,46 +1,42 @@
 package com.enoca.controller;
 
-import com.enoca.model.Customer;
-import com.enoca.service.OrderService;
-import com.enoca.service.CustomerService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@Controller
+import com.enoca.model.PriceHistory;
+import com.enoca.model.dto.OrderDTO;
+import com.enoca.repository.PriceHistoryRepository;
+import com.enoca.service.OrderService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
 @RequestMapping("/orders")
 public class OrderController {
     @Autowired
     private OrderService orderService;
-
     @Autowired
-    private CustomerService customerService;
+    private PriceHistoryRepository priceHistoryRepository;
 
-    @GetMapping
-    public String viewOrders(Model model, @AuthenticationPrincipal UserDetails userDetails) {
-        Customer customer = customerService.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalStateException("Customer not found"));
-        model.addAttribute("orders", orderService.getAllOrdersForCustomer(customer));
-        return "orders";
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<OrderDTO>> getAllOrdersForCustomer(@PathVariable Long customerId) {
+        return ResponseEntity.ok(orderService.getAllOrdersForCustomer(customerId));
     }
 
     @GetMapping("/{orderId}")
-    public String viewOrderDetails(@PathVariable Long orderId, Model model) {
-        model.addAttribute("order", orderService.getOrderById(orderId));
-        return "orderDetails";
+    public ResponseEntity<OrderDTO> getOrderForCode(@PathVariable Long orderId) {
+        return ResponseEntity.ok(orderService.getOrderForCode(orderId));
     }
 
-    @PostMapping("/place")
-    public String placeOrder(@AuthenticationPrincipal UserDetails userDetails) {
-        Customer customer = customerService.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalStateException("Customer not found"));
-        orderService.placeOrder(customer);
-        return "redirect:/orders";
+    @PostMapping("/place/{customerId}")
+    public ResponseEntity<Void> placeOrder(@PathVariable Long customerId) {
+        orderService.placeOrder(customerId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/product/history/{productId}")
+    public ResponseEntity<List<PriceHistory>> getPriceHistory(@PathVariable Long productId) {
+        return ResponseEntity.ok(priceHistoryRepository.findByProductId(productId));
     }
 }
