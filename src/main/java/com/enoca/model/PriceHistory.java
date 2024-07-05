@@ -6,8 +6,8 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
 @Data
+@Entity
 public class PriceHistory extends BaseEntity {
     @ManyToOne
     private Product product;

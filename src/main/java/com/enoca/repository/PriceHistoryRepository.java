@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long> {
     List<PriceHistory> findByProductId(Long productId);
+    void deleteByProductId(Long productId);
 }

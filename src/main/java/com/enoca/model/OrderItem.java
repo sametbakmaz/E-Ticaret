@@ -5,8 +5,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
-@Entity
 @Data
+@Entity
 public class OrderItem extends BaseEntity {
 
     @ManyToOne

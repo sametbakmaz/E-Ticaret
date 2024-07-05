@@ -1,18 +1,18 @@
 package com.enoca.service;
 
-
+import com.enoca.model.dto.CartDTO;
+import com.enoca.model.dto.OrderItemDTO;
 import com.enoca.model.Cart;
 import com.enoca.model.Customer;
 import com.enoca.model.OrderItem;
 import com.enoca.model.Product;
-import com.enoca.model.dto.CartDTO;
-import com.enoca.model.dto.OrderItemDTO;
 import com.enoca.repository.CartRepository;
 import com.enoca.repository.CustomerRepository;
 import com.enoca.repository.OrderItemRepository;
 import com.enoca.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class CartService {
+
     @Autowired
     private CartRepository cartRepository;
 
@@ -32,11 +33,13 @@ public class CartService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
+    @Transactional
     public CartDTO getCart(Long customerId) {
         Cart cart = cartRepository.findByCustomerId(customerId);
         return convertToDTO(cart);
     }
 
+    @Transactional
     public void addProductToCart(Long customerId, Long productId, int quantity) {
         Cart cart = cartRepository.findByCustomerId(customerId);
         if (cart == null) {
@@ -44,6 +47,8 @@ public class CartService {
             Customer customer = customerRepository.findById(customerId)
                     .orElseThrow(() -> new RuntimeException("Customer not found"));
             cart.setCustomer(customer);
+            cart.setTotalPrice(BigDecimal.ZERO);
+            cart = cartRepository.save(cart); // Cart'ı önce kaydet
         }
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -63,16 +68,31 @@ public class CartService {
         cartRepository.save(cart);
     }
 
-    public void removeProductFromCart(Long customerId, Long productId) {
+    @Transactional
+    public void removeProductFromCart(Long customerId, Long productId, int quantity) {
         Cart cart = cartRepository.findByCustomerId(customerId);
-        List<OrderItem> items = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .collect(Collectors.toList());
-        orderItemRepository.deleteAll(items);
-        cart.getItems().removeAll(items);
-        updateCartTotalPrice(cart);
-        cartRepository.save(cart);
+        if (cart != null) {
+            // Belirtilen productId'ye sahip OrderItem'ları bul
+            List<OrderItem> itemsToRemove = cart.getItems().stream()
+                    .filter(item -> item.getProduct().getId().equals(productId))
+                    .collect(Collectors.toList());
+
+            for (OrderItem item : itemsToRemove) {
+                if (item.getQuantity() > quantity) {
+                    item.setQuantity(item.getQuantity() - quantity);
+                    orderItemRepository.save(item);
+                } else {
+                    cart.getItems().remove(item);
+                    orderItemRepository.delete(item);
+                }
+            }
+
+            updateCartTotalPrice(cart);
+            cartRepository.save(cart);
+        }
     }
+
+    @Transactional
     public void emptyCart(Long customerId) {
         Cart cart = cartRepository.findByCustomerId(customerId);
         if (cart != null) {

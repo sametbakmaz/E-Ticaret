@@ -6,6 +6,7 @@ import com.enoca.model.Product;
 import com.enoca.model.dto.ProductDTO;
 import com.enoca.repository.PriceHistoryRepository;
 import com.enoca.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -53,8 +54,10 @@ public class ProductService {
         return convertToDTO(productRepository.save(product));
     }
 
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+    @Transactional
+    public void deleteProduct(Long productId) {
+        priceHistoryRepository.deleteByProductId(productId);
+        productRepository.deleteById(productId);
     }
 
     private ProductDTO convertToDTO(Product product) {

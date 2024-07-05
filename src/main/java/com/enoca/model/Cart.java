@@ -3,11 +3,9 @@ package com.enoca.model;
 import lombok.Data;
 
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @Entity
@@ -16,8 +14,8 @@ public class Cart extends BaseEntity {
     @OneToOne
     private Customer customer;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
-    private List<OrderItem> items;
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> items = new ArrayList<>();
 
     private BigDecimal totalPrice;
 }

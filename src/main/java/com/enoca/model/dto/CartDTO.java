@@ -1,5 +1,6 @@
 package com.enoca.model.dto;
 
+import com.enoca.model.dto.OrderItemDTO;
 import lombok.Data;
 
 import java.math.BigDecimal;

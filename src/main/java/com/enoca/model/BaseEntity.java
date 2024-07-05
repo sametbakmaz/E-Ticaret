@@ -1,8 +1,8 @@
 package com.enoca.model;
 
-import jakarta.persistence.MappedSuperclass;
 import lombok.Data;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Data
