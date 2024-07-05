@@ -1,8 +1,9 @@
 package com.enoca.repository;
 
-import com.enoca.model.Product;
+import com.enoca.model.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {}
+public interface CartItemRepository extends JpaRepository<CartItem, Long> {
+}

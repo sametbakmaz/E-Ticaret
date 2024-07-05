@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Details</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">E-Commerce</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/customers}">Customers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/products}">Products</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/carts}">Carts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/orders}">Orders</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <h1 class="mt-5">Order Details</h1>
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">Order ID: <span th:text="${order.id}">Order ID</span></h5>
+            <h5 class="card-title">Customer: <span th:text="${order.customer.name}">Customer Name</span></h5>
+            <h5 class="card-title">Total Amount: <span th:text="${order.totalAmount}">Total Amount</span></h5>
+            <h5 class="card-title">Order Date: <span th:text="${order.orderDate}">Order Date</span></h5>
+        </div>
+    </div>
+
+    <h2 class="mt-5">Products in Order</h2>
+    <table class="table mt-3">
+        <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Product Price</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="product : ${order.products}">
+            <td th:text="${product.name}">Product Name</td>
+            <td th:text="${product.price}">Product Price</td>
+        </tr>
+        </tbody>
+    </table>
+    <a th:href="@{/orders}" class="btn btn-secondary mt-3">Back to Orders</a>
+</div>
+</body>
+</html>

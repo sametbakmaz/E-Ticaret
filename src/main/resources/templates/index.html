@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Spring Boot E-Commerce</title>
+    <title>eCommerce</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
 </head>
 <body>
-<h1>Welcome to E-Commerce Management</h1>
-<ul>
-    <li><a th:href="@{/customers}">Manage Customers</a></li>
-    <li><a th:href="@{/products}">Manage Products</a></li>
-    <li><a th:href="@{/carts}">Manage Carts</a></li>
-    <li><a th:href="@{/orders}">Manage Orders</a></li>
-</ul>
+<div class="container">
+    <h1>Welcome to Our eCommerce Site</h1>
+    <div th:each="product : ${products}">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title" th:text="${product.name}"></h5>
+                <p class="card-text" th:text="${product.description}"></p>
+                <p class="card-text" th:text="'Price: ' + ${product.price}"></p>
+                <p class="card-text" th:text="'Stock: ' + ${product.stock}"></p>
+                <a th:href="@{'/cart/add/' + ${product.id}}" class="btn btn-primary">Add to Cart</a>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

@@ -1,66 +1,72 @@
 package com.enoca.service;
 
+import com.enoca.exception.ResourceNotFoundException;
 import com.enoca.model.Cart;
 import com.enoca.model.Customer;
 import com.enoca.model.Product;
 import com.enoca.repository.CartRepository;
-import com.enoca.repository.CustomerRepository;
 import com.enoca.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-
 @Service
 public class CartService {
-
     @Autowired
     private CartRepository cartRepository;
 
     @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
     private ProductRepository productRepository;
 
-    public Cart getCart(Long customerId) {
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+    @Autowired
+    private CustomerService customerService;
+
+    public Cart getCurrentCart(Customer customer) {
         return cartRepository.findByCustomer(customer)
-                .orElse(new Cart());
+                .orElseGet(() -> createCart(customer));
     }
 
-    public Cart addProductToCart(Long cartId, Long productId) {
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+    public void addProductToCart(Customer customer, Long productId) {
+        Cart cart = getCurrentCart(customer);
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        if (product.getStock() <= 0) {
+            throw new IllegalStateException("Product is out of stock");
+        }
 
         cart.getProducts().add(product);
-        updateCartTotalAmount(cart);
-
-        return cartRepository.save(cart);
+        updateTotalPrice(cart);
+        cartRepository.save(cart);
     }
 
-    public Cart removeProductFromCart(Long cartId, Long productId) {
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+    public void removeProductFromCart(Customer customer, Long productId) {
+        Cart cart = getCurrentCart(customer);
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
         cart.getProducts().remove(product);
-        updateCartTotalAmount(cart);
+        updateTotalPrice(cart);
+        cartRepository.save(cart);
+    }
 
+    public void emptyCart(Customer customer) {
+        Cart cart = getCurrentCart(customer);
+        cart.getProducts().clear();
+        updateTotalPrice(cart);
+        cartRepository.save(cart);
+    }
+
+    private Cart createCart(Customer customer) {
+        Cart cart = new Cart();
+        cart.setCustomer(customer);
+        cart.setTotalPrice(0);
         return cartRepository.save(cart);
     }
 
-    public void updateCartTotalAmount(Cart cart) {
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (Product product : cart.getProducts()) {
-            totalAmount = totalAmount.add(product.getPrice());
-        }
-        cart.setTotalAmount(totalAmount);
+    private void updateTotalPrice(Cart cart) {
+        double totalPrice = cart.getProducts().stream()
+                .mapToDouble(Product::getPrice)
+                .sum();
+        cart.setTotalPrice(totalPrice);
     }
-
-    // Other cart related methods
 }

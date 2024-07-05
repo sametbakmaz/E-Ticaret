@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Customer List</title>
-    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+    <title>Manage Customers</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" />
 </head>
 <body>
 <div class="container">
-    <h2>Customer List</h2>
-    <table class="table table-striped">
+    <h2>Manage Customers</h2>
+    <table class="table">
         <thead>
         <tr>
-            <th>ID</th>
             <th>Name</th>
             <th>Email</th>
-            <th>Address</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="customer : ${customers}">
-            <td th:text="${customer.id}"></td>
             <td th:text="${customer.name}"></td>
             <td th:text="${customer.email}"></td>
-            <td th:text="${customer.address}"></td>
+            <td>
+                <a th:href="@{'/admin/customers/delete/' + ${customer.id}}" class="btn btn-danger">Delete</a>
+            </td>
         </tr>
         </tbody>
     </table>

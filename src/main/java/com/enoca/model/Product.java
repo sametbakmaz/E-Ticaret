@@ -1,15 +1,15 @@
 package com.enoca.model;
 
-import jakarta.persistence.Entity;
 import lombok.Data;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
-import java.math.BigDecimal;
-
-@Entity
 @Data
-public class Product extends BaseEntity{
-
+@Entity
+@Table(name = "products")
+public class Product extends BaseEntity {
     private String name;
-    private BigDecimal price;
+    private String description;
+    private double price;
     private int stock;
 }

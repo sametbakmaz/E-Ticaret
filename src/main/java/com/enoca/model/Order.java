@@ -3,13 +3,12 @@ package com.enoca.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Entity
 @Data
+@Entity
+@Table(name = "orders")
 public class Order extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -17,14 +16,11 @@ public class Order extends BaseEntity {
 
     @ManyToMany
     @JoinTable(
-            name = "order_product",
+            name = "order_products",
             joinColumns = @JoinColumn(name = "order_id"),
             inverseJoinColumns = @JoinColumn(name = "product_id")
     )
     private Set<Product> products = new HashSet<>();
 
-    private BigDecimal totalAmount = BigDecimal.ZERO;
-    private LocalDateTime orderDate;
-
-    // Getters and Setters
+    private double totalPrice;
 }
